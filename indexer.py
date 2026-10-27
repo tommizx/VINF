@@ -43,6 +43,7 @@ YEAR_FILTER_RE = re.compile(
 IDF_METHODS = ("classic", "smoothed")
 EXACT_TITLE_BONUS = 0.5
 TITLE_PHRASE_BONUS = 0.15
+DESCRIPTION_PREVIEW_LENGTH = 240
 
 
 def tokenize(value: str):
@@ -267,9 +268,43 @@ def print_results(results, query: str, method: str):
         print(f"{position}. {title}  [score={result['score']:.4f}]")
         if details:
             print(f"   {details}")
+
+        rating = book.get("rating")
+        rating_count = book.get("rating_count")
+        if rating is not None:
+            try:
+                rating_text = f"{float(rating):.2f}/5"
+            except (TypeError, ValueError):
+                rating_text = str(rating)
+            if rating_count is not None:
+                rating_text += f" ({rating_count} ratings)"
+            print(f"   Rating: {rating_text}")
+
+        series = book.get("series") or []
+        if not isinstance(series, (list, tuple)):
+            series = [series]
+        series = [str(item) for item in series if item]
+        if series:
+            print(f"   Series: {', '.join(series)}")
+
         genres = book.get("genres") or []
         if genres:
-            print(f"   Genres: {', '.join(map(str, genres))}")
+            if not isinstance(genres, (list, tuple)):
+                genres = [genres]
+            shown_genres = [str(genre) for genre in genres[:3]]
+            remaining_genres = len(genres) - len(shown_genres)
+            genre_text = ", ".join(shown_genres)
+            if remaining_genres:
+                genre_text += f" (+{remaining_genres} more)"
+            print(f"   Genres: {genre_text}")
+
+        description = re.sub(r"\s+", " ", field_text(book.get("description"))).strip()
+        if description:
+            if len(description) > DESCRIPTION_PREVIEW_LENGTH:
+                preview = description[:DESCRIPTION_PREVIEW_LENGTH].rsplit(" ", 1)[0]
+                description = preview.rstrip(".,;:") + "…"
+            print(f"   Description: {description}")
+
         if book.get("url"):
             print(f"   {book['url']}")
 
