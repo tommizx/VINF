@@ -4,5 +4,7 @@
 
 visited.txt
 queue.txt
+search_index.json
+books.jsonl
 
 /html
